@@ -32,23 +32,6 @@ This project demonstrates how a frontend communicates with a backend server and 
 - PostgreSQL (Optional for production)
 
 ---
-
-## 📁 Project Structure
-
-todo-app/
-│
-├── public/ ← Frontend files (served to browser)
-│ ├── index.html ← UI structure
-│ ├── styles.css ← UI styling
-│ └── scripts.js ← Frontend logic
-│
-├── db/ ← Database folder
-│ └── todo.db ← SQLite database file
-│
-├── index.js ← Backend server (Express + Bun)
-├── package.json ← Project metadata & dependencies
-└── README.md ← Project documentation
-
 ## 📄 File Responsibilities
 
 ### `index.html`
