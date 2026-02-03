@@ -1,0 +1,134 @@
+/* Page background */
+body {
+  margin: 0;
+  height: 100vh;
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #6f7bf7, #7b5fc7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Main card */
+.app {
+  background: #ffffff;
+  width: 700px;
+  padding: 45px;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+}
+
+/* Title */
+.app h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Add task bar */
+.add-bar input {
+  flex: 1;
+  padding: 16px 18px;
+  font-size: 18px;
+
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  outline: none;
+}
+
+.add-bar input:focus {
+  border-color: #6f7bf7;
+  box-shadow: 0 0 0 3px rgba(111,123,247,0.25);
+}
+
+.add-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  padding: 22px;
+  background: #f7f8ff;
+  border-radius: 18px;
+}
+
+
+
+.add-bar input {
+  width: 78%;                     /* ⬅️ dominant */
+  padding: 20px 22px;             /* ⬅️ taller */
+  font-size: 22px;                /* ⬅️ bigger text */
+
+  border-radius: 14px;
+  border: 1px solid #ddd;
+}
+
+
+
+.add-bar button {
+  width: 22%;
+  padding: 20px 0;                /* ⬅️ SAME height as input */
+  font-size: 20px;
+
+  border-radius: 14px;
+  background: #6f7bf7;
+  color: white;
+}
+
+
+
+.add-bar button:hover {
+  background: #5d68e6;
+}
+
+/* Todo list */
+ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 26px;
+}
+
+/* Each todo row */
+li {
+  display: flex;
+  align-items: center;
+
+  padding: 12px 14px;             /* ⬇️ reduced */
+  margin-bottom: 10px;
+
+  font-size: 16px;                /* ⬇️ smaller than input */
+  background: white;
+  border-radius: 12px;
+
+  box-shadow: 0 3px 8px rgba(0,0,0,0.07);
+}
+
+
+li input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 14px;
+}
+
+
+/* Task text */
+li span {
+  flex: 1;
+  cursor: pointer;
+}
+
+/* Completed state */
+li.completed span {
+  text-decoration: line-through;
+  color: #999;
+}
+
+/* Delete button */
+li button {
+  padding: 6px 12px;
+  font-size: 15px;
+  border-radius: 8px;
+}
+
+
+li button:hover {
+  background: #e55353;
+}
