@@ -1,25 +1,356 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Todo</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskPro - Modern Task Management</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Override any conflicts with styles.css */
+    body.dark-mode { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); }
+  </style>
 </head>
 <body>
+  <div class="app-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">✓</span>
+          <span class="logo-text">TaskPro</span>
+        </div>
+      </div>
 
-  <div class="app">
-    <h1>Todo</h1>
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" data-view="list">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Tasks</span>
+        </button>
+        <button class="nav-btn" data-view="board">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Board</span>
+        </button>
+        <button class="nav-btn" data-view="calendar">
+          <span class="nav-icon">📅</span>
+          <span class="nav-text">Calendar</span>
+        </button>
+        <button class="nav-btn" data-view="stats">
+          <span class="nav-icon">📈</span>
+          <span class="nav-text">Stats</span>
+        </button>
+      </nav>
 
-    <!-- Add task bar -->
-    <div class="add-bar">
-      <input id="taskInput" type="text" placeholder="Add Tasks" />
-      <button onclick="addTodo()">Add</button>
-    </div>
+      <div class="sidebar-footer">
+        <div class="task-stats">
+          <div class="stat-item">
+            <span class="stat-label">Total</span>
+            <span class="stat-value" id="total-tasks">0</span>
+          </div>
+        </div>
+        <button class="theme-toggle" id="dark-mode-toggle" title="Toggle Dark Mode">
+          🌙
+        </button>
+      </div>
+    </aside>
 
-    <!-- Todo list -->
-    <ul id="todoList"></ul>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <h1 id="view-title">My Tasks</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-box">
+            <input id="search-input" type="text" placeholder="Search tasks..." class="search-input" />
+            <span class="search-icon">🔍</span>
+          </div>
+          <button class="help-btn" title="Help">?</button>
+        </div>
+      </header>
+
+      <!-- Add Task Section -->
+      <section class="add-task-section">
+        <div class="add-task-container">
+          <input id="title-input" type="text" placeholder="Add a new task..." class="task-input" />
+          <select id="priority-input" class="priority-select">
+            <option value="low">Low Priority</option>
+            <option value="medium" selected>Medium Priority</option>
+            <option value="high">High Priority</option>
+          </select>
+          <input type="date" id="date-input" class="date-input" />
+          <button id="add-btn" class="add-btn">+ Add Task</button>
+        </div>
+      </section>
+
+      <!-- Filters -->
+      <section class="filter-section">
+        <div class="filter-container">
+          <button class="filter-btn active" data-filter="all">All Tasks</button>
+          <button class="filter-btn" data-filter="active">Active</button>
+          <button class="filter-btn" data-filter="completed">Completed</button>
+        </div>
+      </section>
+
+      <!-- View Container -->
+      <section class="view-section">
+        <div id="view-container" class="view-container"></div>
+      </section>
+    </main>
   </div>
 
-  <script src="scripts.js"></script>
+  <script>
+    // STATE MANAGEMENT
+    const state = {
+      todos: [],
+      view: "list",
+      filter: "all",
+      searchQuery: ""
+    };
+
+    console.log("✅ TaskPro initialized - App starting...");
+
+    // ===== RENDER FUNCTIONS =====
+    async function renderList(container) {
+      let filtered = state.todos.filter(t => {
+        if (state.filter === "active" && t.completed) return false;
+        if (state.filter === "completed" && !t.completed) return false;
+        if (state.searchQuery && !t.title.toLowerCase().includes(state.searchQuery)) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>${state.searchQuery ? "No matches" : "No tasks"}</p></div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(todo => `
+        <div class="todo-item ${todo.completed ? 'completed' : ''}">
+          <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} onchange="updateTask('${todo.id}', { completed: this.checked })" />
+          <div class="todo-content">
+            <div class="todo-title">${escapeHtml(todo.title)}</div>
+            <div class="todo-meta">
+              <span class="priority-badge priority-${todo.priority}">${todo.priority}</span>
+              ${todo.dueDate ? `<span class="due-date">${new Date(todo.dueDate).toLocaleDateString()}</span>` : ''}
+            </div>
+          </div>
+          <button class="todo-delete" onclick="deleteTask('${todo.id}')">Delete</button>
+        </div>
+      `).join("");
+    }
+
+    async function renderBoard(container) {
+      container.innerHTML = "<p style='padding: 20px; text-align: center;'>Board view coming soon...</p>";
+    }
+
+    async function renderCalendar(container) {
+      container.innerHTML = "<p style='padding: 20px; text-align: center;'>Calendar view coming soon...</p>";
+    }
+
+    async function renderStats(container) {
+      const total = state.todos.length;
+      const completed = state.todos.filter(t => t.completed).length;
+      const active = total - completed;
+      const high = state.todos.filter(t => t.priority === "high").length;
+      const rate = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      container.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Tasks</h3>
+            <div class="stat-value">${total}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Completed</h3>
+            <div class="stat-value">${completed}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Active</h3>
+            <div class="stat-value">${active}</div>
+          </div>
+          <div class="stat-card">
+            <h3>High Priority</h3>
+            <div class="stat-value">${high}</div>
+          </div>
+          <div class="stat-card" style="grid-column: 1/-1;">
+            <h3>Completion Rate: ${rate}%</h3>
+            <div class="progress-bar" style="height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden;">
+              <div style="height: 100%; width: ${rate}%; background: linear-gradient(90deg, #667eea, #764ba2); transition: width 0.3s;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ===== MAIN RENDER =====
+    async function render() {
+      console.log("🎨 Rendering:", state.view);
+      const container = document.getElementById("view-container");
+      
+      const titles = {
+        "list": "📋 My Tasks",
+        "board": "📊 Board View",
+        "calendar": "📅 Calendar View",
+        "stats": "📈 Statistics"
+      };
+      document.getElementById("view-title").textContent = titles[state.view];
+
+      try {
+        switch(state.view) {
+          case "list": await renderList(container); break;
+          case "board": await renderBoard(container); break;
+          case "calendar": await renderCalendar(container); break;
+          case "stats": await renderStats(container); break;
+        }
+      } catch(err) {
+        console.error("Render error:", err);
+        container.innerHTML = `<div class="empty-state"><p>Error: ${err.message}</p></div>`;
+      }
+    }
+
+    // ===== API CALLS =====
+    async function loadTodos() {
+      try {
+        const res = await fetch("/api/todos");
+        state.todos = await res.json();
+        document.getElementById("total-tasks").textContent = state.todos.length;
+        console.log("✅ Loaded", state.todos.length, "todos");
+      } catch(err) {
+        console.error("Load error:", err);
+      }
+    }
+
+    async function addTaskAPI(title, priority, dueDate) {
+      const res = await fetch("/api/todos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, priority, dueDate })
+      });
+      return res.json();
+    }
+
+    async function updateTask(id, updates) {
+      try {
+        await fetch(`/api/todos/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates)
+        });
+        
+        const todo = state.todos.find(t => t.id === id);
+        if (todo) Object.assign(todo, updates);
+        render();
+      } catch(err) {
+        console.error("Update error:", err);
+      }
+    }
+
+    async function deleteTask(id) {
+      try {
+        await fetch(`/api/todos/${id}`, { method: "DELETE" });
+        state.todos = state.todos.filter(t => t.id !== id);
+        document.getElementById("total-tasks").textContent = state.todos.length;
+        render();
+      } catch(err) {
+        console.error("Delete error:", err);
+      }
+    }
+
+    // ===== EVENT LISTENERS =====
+    console.log("🔗 Attaching event listeners...");
+
+    // Nav
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        console.log("🔘 Nav:", btn.dataset.view);
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.view = btn.dataset.view;
+        await render();
+      });
+    });
+
+    // Filter
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        console.log("🔘 Filter:", btn.dataset.filter);
+        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.filter = btn.dataset.filter;
+        await render();
+      });
+    });
+
+    // Add task
+    document.getElementById("add-btn").addEventListener("click", async () => {
+      const title = document.getElementById("title-input").value.trim();
+      const priority = document.getElementById("priority-input").value;
+      const dueDate = document.getElementById("date-input").value;
+
+      if (!title) {
+        document.getElementById("title-input").focus();
+        return;
+      }
+
+      try {
+        const btn = document.getElementById("add-btn");
+        btn.disabled = true;
+        btn.textContent = "Adding...";
+
+        await addTaskAPI(title, priority, dueDate);
+        document.getElementById("title-input").value = "";
+        document.getElementById("date-input").value = "";
+        document.getElementById("priority-input").value = "medium";
+
+        await loadTodos();
+        await render();
+        console.log("✅ Task added");
+      } catch(err) {
+        alert("Error: " + err.message);
+      } finally {
+        document.getElementById("add-btn").disabled = false;
+        document.getElementById("add-btn").textContent = "+ Add Task";
+      }
+    });
+
+    // Enter key
+    document.getElementById("title-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("add-btn").click();
+      }
+    });
+
+    // Search
+    document.getElementById("search-input").addEventListener("input", async (e) => {
+      state.searchQuery = e.target.value.toLowerCase();
+      await render();
+    });
+
+    // Dark mode
+    document.getElementById("dark-mode-toggle").addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+    });
+
+    if (localStorage.getItem("darkMode") === "true") {
+      document.body.classList.add("dark-mode");
+    }
+
+    // ===== INIT =====
+    console.log("✅ All listeners attached");
+    (async () => {
+      console.log("⏳ Loading todos...");
+      await loadTodos();
+      await render();
+      console.log("🚀 TaskPro ready!");
+    })();
+  </script>
 </body>
 </html>
