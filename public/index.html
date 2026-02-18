@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TaskPro - Modern Task Management</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <style>
     /* Override any conflicts with styles.css */
     body.dark-mode { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); }
@@ -16,26 +17,26 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo">
-          <span class="logo-icon">✓</span>
+          <div class="logo-icon"><i data-feather="clipboard"></i></div>
           <span class="logo-text">TaskPro</span>
         </div>
       </div>
 
       <nav class="sidebar-nav">
         <button class="nav-btn active" data-view="list">
-          <span class="nav-icon">📋</span>
+          <i data-feather="list" class="nav-icon"></i>
           <span class="nav-text">Tasks</span>
         </button>
         <button class="nav-btn" data-view="board">
-          <span class="nav-icon">📊</span>
+          <i data-feather="grid" class="nav-icon"></i>
           <span class="nav-text">Board</span>
         </button>
         <button class="nav-btn" data-view="calendar">
-          <span class="nav-icon">📅</span>
+          <i data-feather="calendar" class="nav-icon"></i>
           <span class="nav-text">Calendar</span>
         </button>
         <button class="nav-btn" data-view="stats">
-          <span class="nav-icon">📈</span>
+          <i data-feather="bar-chart-2" class="nav-icon"></i>
           <span class="nav-text">Stats</span>
         </button>
       </nav>
@@ -48,10 +49,11 @@
           </div>
         </div>
         <button class="theme-toggle" id="dark-mode-toggle" title="Toggle Dark Mode">
-          🌙
+          <i data-feather="moon" class="nav-icon"></i>
         </button>
       </div>
     </aside>
+    <div class="sidebar-resize" id="sidebar-resize" title="Drag to resize"></div>
 
     <!-- Main Content Area -->
     <main class="main-content">
@@ -63,9 +65,11 @@
         <div class="header-right">
           <div class="search-box">
             <input id="search-input" type="text" placeholder="Search tasks..." class="search-input" />
-            <span class="search-icon">🔍</span>
+            <i data-feather="search" class="search-icon"></i>
           </div>
-          <button class="help-btn" title="Help">?</button>
+          <button class="help-btn" title="Help">
+            <i data-feather="help-circle" class="help-icon"></i>
+          </button>
         </div>
       </header>
 
@@ -79,7 +83,10 @@
             <option value="high">High Priority</option>
           </select>
           <input type="date" id="date-input" class="date-input" />
-          <button id="add-btn" class="add-btn">+ Add Task</button>
+          <button id="add-btn" class="add-btn">
+            <i data-feather="plus" class="add-icon"></i>
+            <span>Add Task</span>
+          </button>
         </div>
       </section>
 
@@ -120,11 +127,11 @@
       });
 
       if (filtered.length === 0) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>${state.searchQuery ? "No matches" : "No tasks"}</p></div>`;
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon"><i data-feather="inbox" class="empty-icon"></i></div><p>${state.searchQuery ? "No matches" : "No tasks"}</p></div>`;
         return;
       }
 
-      container.innerHTML = filtered.map(todo => `
+      container.innerHTML = `<div class="todo-list">` + filtered.map(todo => `
         <div class="todo-item ${todo.completed ? 'completed' : ''}">
           <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} onchange="updateTask('${todo.id}', { completed: this.checked })" />
           <div class="todo-content">
@@ -134,9 +141,9 @@
               ${todo.dueDate ? `<span class="due-date">${new Date(todo.dueDate).toLocaleDateString()}</span>` : ''}
             </div>
           </div>
-          <button class="todo-delete" onclick="deleteTask('${todo.id}')">Delete</button>
+          <button class="todo-delete" onclick="deleteTask('${todo.id}')"><i data-feather="trash-2"></i></button>
         </div>
-      `).join("");
+      `).join("") + `</div>`;
     }
 
     async function renderBoard(container) {
@@ -175,7 +182,7 @@
           <div class="stat-card" style="grid-column: 1/-1;">
             <h3>Completion Rate: ${rate}%</h3>
             <div class="progress-bar" style="height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden;">
-              <div style="height: 100%; width: ${rate}%; background: linear-gradient(90deg, #667eea, #764ba2); transition: width 0.3s;"></div>
+              <div style="height: 100%; width: ${rate}%; background: linear-gradient(90deg, var(--teal), var(--purple)); transition: width 0.3s;"></div>
             </div>
           </div>
         </div>
@@ -194,10 +201,10 @@
       const container = document.getElementById("view-container");
       
       const titles = {
-        "list": "📋 My Tasks",
-        "board": "📊 Board View",
-        "calendar": "📅 Calendar View",
-        "stats": "📈 Statistics"
+        "list": "My Tasks",
+        "board": "Board View",
+        "calendar": "Calendar View",
+        "stats": "Statistics"
       };
       document.getElementById("view-title").textContent = titles[state.view];
 
@@ -212,6 +219,7 @@
         console.error("Render error:", err);
         container.innerHTML = `<div class="empty-state"><p>Error: ${err.message}</p></div>`;
       }
+      feather.replace();
     }
 
     // ===== API CALLS =====
@@ -300,8 +308,9 @@
 
       try {
         const btn = document.getElementById("add-btn");
+        const btnLabel = btn.querySelector('span');
         btn.disabled = true;
-        btn.textContent = "Adding...";
+        if (btnLabel) btnLabel.textContent = "Adding...";
 
         await addTaskAPI(title, priority, dueDate);
         document.getElementById("title-input").value = "";
@@ -314,8 +323,10 @@
       } catch(err) {
         alert("Error: " + err.message);
       } finally {
-        document.getElementById("add-btn").disabled = false;
-        document.getElementById("add-btn").textContent = "+ Add Task";
+        const btn = document.getElementById("add-btn");
+        const btnLabel = btn.querySelector('span');
+        if (btn) btn.disabled = false;
+        if (btnLabel) btnLabel.textContent = "Add Task";
       }
     });
 
@@ -351,6 +362,45 @@
       await render();
       console.log("🚀 TaskPro ready!");
     })();
+
+    // Sidebar resize / collapse behavior
+    (function() {
+      const sizer = document.getElementById('sidebar-resize');
+      const root = document.documentElement;
+      const sidebar = document.querySelector('.sidebar');
+      let isResizing = false;
+
+      sizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.classList.add('resizing');
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const min = 72;
+        const max = 480;
+        const newW = Math.min(max, Math.max(min, e.clientX));
+        root.style.setProperty('--sidebar-width', newW + 'px');
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          document.body.classList.remove('resizing');
+        }
+      });
+
+      // double-click to toggle collapsed
+      sizer.addEventListener('dblclick', () => {
+        sidebar.classList.toggle('collapsed');
+        if (sidebar.classList.contains('collapsed')) {
+          root.style.setProperty('--sidebar-width', '72px');
+        } else {
+          root.style.setProperty('--sidebar-width', '280px');
+        }
+      });
+    })();
+    
   </script>
 </body>
 </html>
